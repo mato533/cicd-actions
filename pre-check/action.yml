@@ -1,0 +1,68 @@
+name: pre-check
+description: 'Precheck for the CI workflow'
+inputs:
+  target-sha:
+    description: 'target commit id for checking '
+    required: false
+    default: ${{ github.sha }}
+
+outputs:
+  is-skip:
+    description: "Must be skipped the process (return 1)"
+    value: ${{ steps.result.outputs.is-skip }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.target-sha }}
+
+    - name: Check wip
+      id: check-wip
+      shell: bash
+      env:
+        COMMIT_ID: ${{ inputs.target-sha }}
+      run: |
+        VAR_NAME="is-wip"
+        commit_msg="$(git show "${COMMIT_ID}" -s --format=%B)"
+        if $(echo "${commit_msg}"|grep 'wip:'>/dev/null); then
+          RESULT="${VAR_NAME}=1"
+        else
+          RESULT="${VAR_NAME}=0"
+        fi
+        echo "${RESULT}">>"${GITHUB_OUTPUT}"
+        echo "${RESULT}"
+
+    - name: Check auto generated commit
+      id: check-auto-commit
+      shell: bash
+      env:
+        COMMIT_ID: ${{ inputs.target-sha }}
+      run: |
+        VAR_NAME="is-auto"
+        commit_msg="$(git show "${COMMIT_ID}" -s --format=%B)"
+        if $(echo "${commit_msg}"|grep "\[AUTO\]">/dev/null); then
+          RESULT="${VAR_NAME}=1"
+        else
+          RESULT="${VAR_NAME}=0"
+        fi
+        echo "${RESULT}">>"${GITHUB_OUTPUT}"
+        echo "${RESULT}"
+
+    - name: Set job output
+      id: result
+      shell: bash
+      env:
+        IS_WIP: ${{ steps.check-wip.outputs.is-wip }}
+        IS_AUTO: ${{ steps.check-auto-commit.outputs.is-auto }}
+      run: |
+        VAR_NAME="is-skip"
+        if [ ${IS_WIP} == 0 ] && [ ${IS_AUTO} == 0 ];then
+          RESULT="${VAR_NAME}=0"
+        else
+          RESULT="${VAR_NAME}=1"
+        fi
+        echo "${RESULT}">>"${GITHUB_OUTPUT}"
+        echo "${RESULT}"
