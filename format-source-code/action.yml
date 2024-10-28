@@ -1,0 +1,145 @@
+name: Edit source code
+description: Perform routine modifications to source code before testing
+
+inputs:
+  app-id:
+    required: true
+    description: "Github AppID"
+  owner:
+    required: false
+    description: "GithubApp Owner"
+    default: ${{ github.repository_owner }}
+  private-key:
+    required: true
+    description: "GithubApp Key"
+  branch:
+    required: true
+    description: "Brach to be pushed commits"
+outputs:
+  is-updated:
+    description: "return 1 when Something was changed, otherwise 0"
+    value: ${{ steps.is-exists-commit.outputs.is-exist }}
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/create-github-app-token@v1
+      id: app-token
+      with:
+        app-id: ${{ inputs.app-id }}
+        owner: ${{ inputs.owner }}
+        private-key: ${{ inputs.private-key }}
+
+    - name: Configration for git
+      shell: bash
+      env:
+        GH_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+        GH_USER: 'github-actions[bot]'
+      run: |
+        git config --global user.name "${GH_USER}"
+        git config --global user.email "${GH_EMAIL}"
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+        token: ${{ steps.app-token.outputs.token }}
+        fetch-depth: 0
+        clean: false
+
+    - name: Get latest commit id
+      shell: bash
+      id: get-org-commit
+      run: |
+        RESULT="id=$(git log -1 --format=%H)"
+        echo "${RESULT}">>"${GITHUB_OUTPUT}"
+        echo "${RESULT}"
+
+
+    - name: format
+      shell: bash
+      run: pnpm run format
+
+    - name: lint
+      shell: bash
+      run: pnpm run lint
+
+    - name: Check if there are any changes
+      shell: bash
+      id: check-changes-fomat-lint
+      run: |
+        git add -N .
+        if git diff --exit-code --quiet; then
+          echo "No changes detected."
+        else
+          echo "Changes detected."
+          git add .
+          git commit -F-<<EOF
+          style: format and lint source codes
+
+          [AUTO] this commit is created by github actions automatialy.
+        EOF
+        fi
+
+    - name: update package.json
+      shell: bash
+      if: ${{ startsWith(inputs.branch, 'release/') }}
+      env:
+        BRANCH_NAME: ${{ inputs.branch }}
+      run: |
+        APP_VERSION_TEXT=${BRANCH_NAME##*/}
+        APP_VERSION="$(echo "${APP_VERSION_TEXT}"| grep -o -E "([0-9]+\.){1}[0-9]+(\.[0-9]+)?")"
+        echo "app-version-text=${APP_VERSION_TEXT}" >>"${GITHUB_OUTPUT}"
+        echo "app-version=${APP_VERSION}" >>"${GITHUB_OUTPUT}"
+
+        echo "detected version: ${APP_VERSION}"
+
+        echo "Try to update package.json"
+        echo "-- before"
+        cat package.json|grep version
+
+        pnpm version "${APP_VERSION}" --no-commit-hooks --no-git-tag-version
+
+        echo "-- after"
+        cat package.json|grep version
+
+    - name: Check if there are any changes
+      shell: bash
+      if: ${{ startsWith(inputs.branch, 'release/') }}
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      run: |
+        git add -N .
+        if git diff --exit-code --quiet; then
+          echo "No changes detected."
+        else
+          echo "Changes detected."
+          git add .
+          git commit -F-<<EOF
+          chore: update version of package.json
+
+          [AUTO] this commit is created by github actions automatialy.
+        EOF
+
+    - name: check commits
+      shell: bash
+      id: is-exists-commit
+      env:
+        ORG_COMMIT_ID: ${{ steps.get-org-commit.outputs.id }}
+      run: |
+        if git log ${ORG_COMMIT_ID}..HEAD --oneline | grep .>/dev/null; then
+          echo "There are new commits."
+          RESULT="is-exist=1"
+        else
+          echo "No new commits"
+          RESULT="is-exist=0"
+        fi
+        echo "${RESULT}">>"${GITHUB_OUTPUT}"
+        echo "${RESULT}"
+
+    - name: push
+      shell: bash
+      if: ${{ steps.is-exists-commit.outputs.is-exist > 0 }}
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      run: git push
