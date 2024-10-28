@@ -8,7 +8,7 @@ inputs:
 
 outputs:
   is-skip:
-    description: "Must be skipped the process (return 1)"
+    description: 'Must be skipped the process (return 1)'
     value: ${{ steps.result.outputs.is-skip }}
 
 runs:
