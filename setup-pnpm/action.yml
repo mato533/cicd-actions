@@ -33,7 +33,7 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
-        cache: ${{ cache }}
+        cache: ${{ inputs.cache }}
         registry-url: ${{ inputs.registry-url }}
 
     - name: Install dependencies
