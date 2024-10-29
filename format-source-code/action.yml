@@ -97,7 +97,13 @@ runs:
         echo "-- before"
         cat package.json|grep version
 
-        pnpm version "${APP_VERSION}" --no-commit-hooks --no-git-tag-version
+        echo
+        if pnpm version "${APP_VERSION}" --no-commit-hooks --no-git-tag-version; then
+          echo "Updated"
+        else
+          echo "No Change"
+        fi
+        echo
 
         echo "-- after"
         cat package.json|grep version
