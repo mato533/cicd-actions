@@ -4,20 +4,20 @@ description: Perform routine modifications to source code before testing
 inputs:
   app-id:
     required: true
-    description: "Github AppID"
+    description: 'Github AppID'
   owner:
     required: false
-    description: "GithubApp Owner"
+    description: 'GithubApp Owner'
     default: ${{ github.repository_owner }}
   private-key:
     required: true
-    description: "GithubApp Key"
+    description: 'GithubApp Key'
   branch:
     required: true
-    description: "Brach to be pushed commits"
+    description: 'Brach to be pushed commits'
 outputs:
   is-updated:
-    description: "return 1 when Something was changed, otherwise 0"
+    description: 'return 1 when Something was changed, otherwise 0'
     value: ${{ steps.is-exists-commit.outputs.is-exist }}
 
 runs:
@@ -54,7 +54,6 @@ runs:
         RESULT="id=$(git log -1 --format=%H)"
         echo "${RESULT}">>"${GITHUB_OUTPUT}"
         echo "${RESULT}"
-
 
     - name: format
       shell: bash

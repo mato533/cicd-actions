@@ -4,19 +4,19 @@ inputs:
   node-version:
     description: 'Version for The Node'
     required: false
-    default: "20"
+    default: '20'
   fetch-depth:
     description: 'Fetch depth for checkout'
     required: false
-    default: "1"
+    default: '1'
   cache:
     description: 'Used to specify a package manager for caching in the default directory.'
     required: false
-    default: ""
+    default: ''
   registry-url:
     description: 'Optional registry to set up for auth.'
     required: false
-    default: ""
+    default: ''
 
 runs:
   using: 'composite'
