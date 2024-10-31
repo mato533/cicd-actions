@@ -8,8 +8,11 @@ inputs:
 
 outputs:
   is-skip:
-    description: 'Must be skipped the process (return 1)'
+    description: 'Setted 1 if commit message starts with "wip:" or contains "[AUTO]"'
     value: ${{ steps.result.outputs.is-skip }}
+  is-skip-test:
+    description: 'Setted 1 if commit message contains "[SKIP TEST]"'
+    value: ${{ steps.check-skip-test.outputs.is-skip-test }}
 
 runs:
   using: 'composite'
@@ -51,7 +54,7 @@ runs:
         echo "${RESULT}">>"${GITHUB_OUTPUT}"
         echo "${RESULT}"
 
-    - name: Set job output
+    - name: Set output of this job(is-skip)
       id: result
       shell: bash
       env:
@@ -63,6 +66,22 @@ runs:
           RESULT="${VAR_NAME}=0"
         else
           RESULT="${VAR_NAME}=1"
+        fi
+        echo "${RESULT}">>"${GITHUB_OUTPUT}"
+        echo "${RESULT}"
+
+    - name: Set output of this job(is-skip-test)
+      id: check-skip-test
+      shell: bash
+      env:
+        COMMIT_ID: ${{ inputs.target-sha }}
+      run: |
+        VAR_NAME="is-skip-test"
+        commit_msg="$(git show "${COMMIT_ID}" -s --format=%B)"
+        if $(echo "${commit_msg}"|grep "\[SKIP TEST\]">/dev/null); then
+          RESULT="${VAR_NAME}=1"
+        else
+          RESULT="${VAR_NAME}=0"
         fi
         echo "${RESULT}">>"${GITHUB_OUTPUT}"
         echo "${RESULT}"
