@@ -74,9 +74,9 @@ runs:
           echo "Changes detected."
           git add .
           git commit -F-<<EOF
-          style: format and lint source codes
+        style: format and lint source codes
 
-          [AUTO] this commit is created by github actions automatialy.
+        [AUTO] this commit is created by github actions automatically.
         EOF
         fi
 
@@ -121,9 +121,9 @@ runs:
           echo "Changes detected."
           git add .
           git commit -F-<<EOF
-          chore: update version of package.json
+        chore: update version of package.json
 
-          [AUTO] this commit is created by github actions automatialy.
+        [AUTO] this commit is created by github actions automatialy.
         EOF
         fi
 
