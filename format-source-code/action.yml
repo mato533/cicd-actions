@@ -40,7 +40,7 @@ runs:
         git config --global user.email "${GH_EMAIL}"
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch }}
         token: ${{ steps.app-token.outputs.token }}
